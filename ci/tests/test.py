@@ -28,9 +28,15 @@ extras = { "config" : config,
          }
 
 
+if imnumber:
+    config["IM Number"] = imnumber
+
+data = { "run_id" : run_id,
+         "branch": branch,
+        }
+
 class CustomHttpAdapter (requests.adapters.HTTPAdapter):
     # "Transport adapter" that allows us to use custom ssl_context.
-
     def __init__(self, ssl_context=None, **kwargs):
         self.ssl_context = ssl_context
         super().__init__(**kwargs)
@@ -40,21 +46,13 @@ class CustomHttpAdapter (requests.adapters.HTTPAdapter):
             num_pools=connections, maxsize=maxsize,
             block=block, ssl_context=self.ssl_context)
 
-
 def get_legacy_session():
     ctx = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
     ctx.options |= 0x4  # OP_LEGACY_SERVER_CONNECT
+    ctx.check_hostname = False
     session = requests.session()
     session.mount('https://', CustomHttpAdapter(ctx))
     return session
-
-if imnumber:
-    config["IM Number"] = imnumber
-
-data = { "run_id" : run_id,
-         "branch": branch,
-        }
-
 
 def get_conf():
     results = {}
@@ -158,10 +156,7 @@ def main():
     msg = {"id": location, "key": "42", "data": data}
 
     if "conda" in test.lower():
-        response = get_legacy_session().get(url)
-        print(response)
-        post_response = get_legacy_session().post()
-        print(post_response)
+        get_legacy_session().post(url, json=msg, verify=False)
     else: 
         requests.post(url, json=msg, verify=False)
 
